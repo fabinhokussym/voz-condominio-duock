@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, ThumbsUp, ThumbsDown, MessageCircle, Download, X, User, Search, TrendingUp, CheckCircle2, Clock, Wrench, Sparkles, Shield, DollarSign, ScrollText, MoreHorizontal, Home, Phone, Mail, Globe, Calendar, Award, Briefcase, CircleDollarSign, FileCheck, Flag, Archive, AlertTriangle, Eye, EyeOff, UserCog, Ban, Users, Camera, Edit2, Trash2, Link, ZoomIn } from 'lucide-react';
 
 // ============ SUPABASE CONFIG ============
-// Substitua pelos seus valores após pegar no Supabase → Project Settings → API
-const SUPABASE_URL = 'https://jeackdgolyqbkvngbqsj.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_7lLV5uaydCDBWZETHUGIdw_OvrLjdwk';
+// Lê das variáveis de ambiente do Vercel — nunca hardcoded em produção
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'COLE_SUA_URL_AQUI';
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'COLE_SUA_ANON_KEY_AQUI';
 
 const sb = async (path, options = {}) => {
   const base = SUPABASE_URL.replace('https://', 'https://').replace('.supabase.co', '.supabase.co');
