@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, ThumbsUp, ThumbsDown, MessageCircle, Download, X, User, Search, TrendingUp, CheckCircle2, Clock, Wrench, Sparkles, Shield, DollarSign, ScrollText, MoreHorizontal, Home, Phone, Mail, Globe, Calendar, Award, Briefcase, CircleDollarSign, FileCheck, Flag, Archive, AlertTriangle, Eye, EyeOff, UserCog, Ban, Users } from 'lucide-react';
+import { Plus, ThumbsUp, ThumbsDown, MessageCircle, Download, X, User, Search, TrendingUp, CheckCircle2, Clock, Wrench, Sparkles, Shield, DollarSign, ScrollText, MoreHorizontal, Home, Phone, Mail, Globe, Calendar, Award, Briefcase, CircleDollarSign, FileCheck, Flag, Archive, AlertTriangle, Eye, EyeOff, UserCog, Ban, Users, Camera, Edit2, Trash2, Link, ZoomIn } from 'lucide-react';
 
 // ============ SUPABASE CONFIG ============
 // Substitua pelos seus valores após pegar no Supabase → Project Settings → API
@@ -155,14 +155,99 @@ const LogoDuoCK = ({ size = 32 }) => (
   </svg>
 );
 
+// ============ COMPONENTE PAINEL DE FOTOS ============
+function PainelFotos({ fotos, linkFoto, setLinkFoto, uploadando, onAdicionarLink, onUpload, onRemover, onAmplia, COR, input, label }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={label}>Fotos (opcional — máx. 5)</label>
+
+      {/* Grid de fotos existentes */}
+      {fotos.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
+          {fotos.map((f, i) => (
+            <div key={i} style={{ position: 'relative', paddingBottom: '75%', background: COR.cinza100, borderRadius: 8, overflow: 'hidden', border: `1px solid ${COR.cinza200}` }}>
+              <img
+                src={f.url}
+                alt={`Foto ${i + 1}`}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                onClick={() => onAmplia(f.url)}
+                onError={e => { e.target.style.display = 'none'; }}
+              />
+              <button
+                onClick={() => onRemover(i)}
+                style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {fotos.length < 5 && (
+        <>
+          {/* Upload direto */}
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', border: `1.5px dashed ${COR.cinza200}`, borderRadius: 8, cursor: 'pointer', fontSize: 12, color: COR.cinza700, background: COR.cinza100 }}>
+              <Camera size={15} /> {uploadando ? 'Carregando...' : 'Enviar foto do dispositivo'}
+              <input type="file" accept="image/*" onChange={onUpload} style={{ display: 'none' }} disabled={uploadando} />
+            </label>
+          </div>
+
+          {/* Link de foto */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={linkFoto}
+              onChange={e => setLinkFoto(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && onAdicionarLink()}
+              placeholder="Ou cole um link de foto (http://...)"
+              style={{ ...input, flex: 1, fontSize: 12 }}
+            />
+            <button onClick={onAdicionarLink} disabled={!linkFoto.trim()} style={{ padding: '8px 14px', background: linkFoto.trim() ? COR.teal : COR.cinza200, color: linkFoto.trim() ? '#fff' : COR.cinza400, border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: linkFoto.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+              <Link size={13} /> Adicionar
+            </button>
+          </div>
+          <div style={{ fontSize: 11, color: COR.cinza400, marginTop: 4 }}>
+            Fotos do WhatsApp: abra a foto no WhatsApp Web, clique com botão direito → "Copiar endereço da imagem" e cole aqui.
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============ COMPONENTE GALERIA ============
+function GaleriaFotos({ fotos, onAmplia, COR }) {
+  if (!fotos || fotos.length === 0) return null;
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: fotos.length === 1 ? '1fr' : fotos.length === 2 ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 8 }}>
+        {fotos.map((f, i) => (
+          <div key={i} style={{ position: 'relative', paddingBottom: fotos.length === 1 ? '56%' : '75%', background: COR.cinza100, borderRadius: 10, overflow: 'hidden', border: `1px solid ${COR.cinza200}`, cursor: 'pointer' }} onClick={() => onAmplia(f.url)}>
+            <img
+              src={f.url}
+              alt={`Foto ${i + 1}`}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={e => { e.target.parentElement.style.display = 'none'; }}
+            />
+            <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(27,45,79,0.5)', borderRadius: 6, padding: '3px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <ZoomIn size={12} color="#fff" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Condominio() {
   const [usuario, setUsuario] = useState(null);
   const [nomeInput, setNomeInput] = useState('');
   const [aptoInput, setAptoInput] = useState('');
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [sugestoes, setSugestoes] = useState([]);
-  const [votos, setVotos] = useState({}); // { sugestaoId: [{ apto, tipo }] }
-  const [votosOrc, setVotosOrc] = useState({}); // { sugestaoId: aptoQueVotou }
+  const [votos, setVotos] = useState({});
+  const [votosOrc, setVotosOrc] = useState({});
   const [conselho, setConselho] = useState(['SIND']);
   const [loading, setLoading] = useState(true);
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
@@ -174,7 +259,7 @@ export default function Condominio() {
   const [abrirNova, setAbrirNova] = useState(false);
   const [detalheAberto, setDetalheAberto] = useState(null);
   const [abaDetalhe, setAbaDetalhe] = useState('detalhes');
-  const [novaSugestao, setNovaSugestao] = useState({ titulo: '', descricao: '', categoria: 'melhorias' });
+  const [novaSugestao, setNovaSugestao] = useState({ titulo: '', descricao: '', categoria: 'melhorias', fotos: [] });
   const [avisoNova, setAvisoNova] = useState('');
   const [novoComentario, setNovoComentario] = useState('');
   const [abrirNovoOrc, setAbrirNovoOrc] = useState(false);
@@ -188,6 +273,11 @@ export default function Condominio() {
   const [sinalizando, setSinalizando] = useState(null);
   const [motivoSin, setMotivoSin] = useState('');
   const [usandoSupabase] = useState(SUPABASE_URL !== 'COLE_SUA_URL_AQUI');
+  // Fotos e edição
+  const [fotoAmpliada, setFotoAmpliada] = useState(null);
+  const [editandoSugestao, setEditandoSugestao] = useState(null); // sugestão sendo editada
+  const [linkFoto, setLinkFoto] = useState('');
+  const [uploadandoFoto, setUploadandoFoto] = useState(false);
 
   // ---- LOAD ----
   useEffect(() => {
@@ -253,6 +343,75 @@ export default function Condominio() {
 
   const salvarLocal = async (key, val, shared = false) => {
     try { await window.storage.set(key, JSON.stringify(val), shared); } catch (e) {}
+  };
+
+  // ---- FOTOS ----
+  const adicionarFotoLink = (alvo, setAlvo) => {
+    if (!linkFoto.trim()) return;
+    const url = linkFoto.trim();
+    if (!url.startsWith('http')) { alert('Cole uma URL válida começando com http...'); return; }
+    const fotosAtuais = alvo.fotos || [];
+    if (fotosAtuais.length >= 5) { alert('Máximo de 5 fotos por sugestão.'); return; }
+    setAlvo({ ...alvo, fotos: [...fotosAtuais, { tipo: 'link', url }] });
+    setLinkFoto('');
+  };
+
+  const adicionarFotoUpload = (e, alvo, setAlvo) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { alert('Foto muito grande. Máximo 3MB.'); return; }
+    const fotosAtuais = alvo.fotos || [];
+    if (fotosAtuais.length >= 5) { alert('Máximo de 5 fotos por sugestão.'); return; }
+    setUploadandoFoto(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setAlvo({ ...alvo, fotos: [...fotosAtuais, { tipo: 'base64', url: ev.target.result }] });
+      setUploadandoFoto(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const removerFoto = (idx, alvo, setAlvo) => {
+    setAlvo({ ...alvo, fotos: (alvo.fotos || []).filter((_, i) => i !== idx) });
+  };
+
+  // ---- EDITAR/APAGAR SUGESTÃO ----
+  const podEditarApagar = (s) => {
+    if (!usuario) return false;
+    if (s.autorApto !== usuario.apto) return false;
+    // Só pode se não tiver votos de outros aptos
+    const votosOthers = (votos[s.id] || []).filter(v => v.apto !== usuario.apto);
+    return votosOthers.length === 0;
+  };
+
+  const salvarEdicao = async () => {
+    if (!editandoSugestao) return;
+    const { titulo, descricao, categoria, fotos } = editandoSugestao;
+    if (!titulo.trim() || !descricao.trim()) return;
+    const bloqueada = verificarPalavrasBloqueadas(`${titulo} ${descricao}`);
+    if (bloqueada) { alert(`Texto menciona tema fora da convenção ("${bloqueada}").`); return; }
+    if (usandoSupabase) {
+      await sb(`sugestoes?id=eq.${editandoSugestao.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ titulo: titulo.trim(), descricao: descricao.trim(), categoria, fotos: fotos || [] }),
+        prefer: 'return=minimal',
+      });
+    }
+    const novos = sugestoes.map(s => s.id !== editandoSugestao.id ? s : { ...s, titulo: titulo.trim(), descricao: descricao.trim(), categoria, fotos: fotos || [] });
+    await salvarSugestoes(novos);
+    setDetalheAberto(novos.find(s => s.id === editandoSugestao.id));
+    setEditandoSugestao(null);
+  };
+
+  const apagarSugestao = async (id) => {
+    if (!confirm('Tem certeza que quer apagar esta sugestão? Essa ação não pode ser desfeita.')) return;
+    if (!confirm('Confirma o apagamento?')) return;
+    if (usandoSupabase) {
+      await sb(`sugestoes?id=eq.${id}`, { method: 'DELETE', prefer: '' });
+    }
+    await salvarSugestoes(sugestoes.filter(s => s.id !== id));
+    setDetalheAberto(null);
   };
 
   const salvarSugestoes = async (novas) => {
@@ -354,17 +513,17 @@ export default function Condominio() {
     if (usandoSupabase) {
       const [row] = await sb('sugestoes', {
         method: 'POST',
-        body: JSON.stringify({ titulo: novaSugestao.titulo.trim(), descricao: novaSugestao.descricao.trim(), categoria: novaSugestao.categoria, status: 'ideia', autor_apto: usuario.apto, autor_nome: usuario.nome, data: new Date().toISOString().split('T')[0] }),
+        body: JSON.stringify({ titulo: novaSugestao.titulo.trim(), descricao: novaSugestao.descricao.trim(), categoria: novaSugestao.categoria, status: 'ideia', autor_apto: usuario.apto, autor_nome: usuario.nome, data: new Date().toISOString().split('T')[0], fotos: novaSugestao.fotos || [] }),
       });
-      nova = { ...row, autorApto: row.autor_apto, autorNome: row.autor_nome, prestacaoContas: null, comentarios: [], orcamentos: [], sinalizacoes: [] };
+      nova = { ...row, autorApto: row.autor_apto, autorNome: row.autor_nome, prestacaoContas: null, comentarios: [], orcamentos: [], sinalizacoes: [], fotos: row.fotos || [] };
       await sb('votos_sugestao', { method: 'POST', body: JSON.stringify({ sugestao_id: row.id, apto: usuario.apto, nome: usuario.nome, tipo: 'pos' }), prefer: 'return=minimal' });
       setVotos(prev => ({ ...prev, [row.id]: [{ apto: usuario.apto, nome: usuario.nome, tipo: 'pos' }] }));
     } else {
-      nova = { id: `local_${Date.now()}`, titulo: novaSugestao.titulo.trim(), descricao: novaSugestao.descricao.trim(), categoria: novaSugestao.categoria, status: 'ideia', autorApto: usuario.apto, autorNome: usuario.nome, data: new Date().toISOString().split('T')[0], comentarios: [], orcamentos: [], sinalizacoes: [] };
+      nova = { id: `local_${Date.now()}`, titulo: novaSugestao.titulo.trim(), descricao: novaSugestao.descricao.trim(), categoria: novaSugestao.categoria, status: 'ideia', autorApto: usuario.apto, autorNome: usuario.nome, data: new Date().toISOString().split('T')[0], comentarios: [], orcamentos: [], sinalizacoes: [], fotos: novaSugestao.fotos || [] };
       setVotos(prev => ({ ...prev, [nova.id]: [{ apto: usuario.apto, nome: usuario.nome, tipo: 'pos' }] }));
     }
     await salvarSugestoes([nova, ...sugestoes]);
-    setNovaSugestao({ titulo: '', descricao: '', categoria: 'melhorias' });
+    setNovaSugestao({ titulo: '', descricao: '', categoria: 'melhorias', fotos: [] });
     setAbrirNova(false);
   };
 
@@ -741,6 +900,7 @@ export default function Condominio() {
                             <Badge status={s.status} />
                             {s.orcamentos.length > 0 && <span style={{ background: COR.vinhoLight, color: COR.vinho, borderRadius: 4, padding: '3px 8px', fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Briefcase size={11} /> {s.orcamentos.length} orç.</span>}
                             {s.prestacaoContas && <span style={{ background: '#D1FAE5', color: '#065F46', borderRadius: 4, padding: '3px 8px', fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><FileCheck size={11} /> {formatBRL(s.prestacaoContas.valorFinalPago)}</span>}
+                            {(s.fotos || []).length > 0 && <span style={{ background: COR.tealLight, color: COR.teal, borderRadius: 4, padding: '3px 8px', fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Camera size={11} /> {s.fotos.length}</span>}
                             {meuVoto && <span style={{ background: meuVoto === 'pos' ? '#D1FAE5' : '#FEE2E2', color: meuVoto === 'pos' ? '#065F46' : '#991B1B', borderRadius: 4, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>{meuVoto === 'pos' ? '✓ Concordou' : '✗ Discordou'}</span>}
                             {foiSinalizada && modoConselho && <span style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 4, padding: '3px 8px', fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Flag size={11} /> {s.sinalizacoes.length}</span>}
                           </div>
@@ -861,6 +1021,21 @@ export default function Condominio() {
                 <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} /> {avisoNova}
               </div>
             )}
+
+            {/* PAINEL DE FOTOS - NOVA SUGESTÃO */}
+            <PainelFotos
+              fotos={novaSugestao.fotos || []}
+              linkFoto={linkFoto}
+              setLinkFoto={setLinkFoto}
+              uploadando={uploadandoFoto}
+              onAdicionarLink={() => adicionarFotoLink(novaSugestao, setNovaSugestao)}
+              onUpload={(e) => adicionarFotoUpload(e, novaSugestao, setNovaSugestao)}
+              onRemover={(idx) => removerFoto(idx, novaSugestao, setNovaSugestao)}
+              onAmplia={setFotoAmpliada}
+              COR={COR}
+              input={input}
+              label={label}
+            />
 
             <button onClick={criarSugestao} disabled={!novaSugestao.titulo.trim() || !novaSugestao.descricao.trim()} style={{ width: '100%', padding: 13, background: !novaSugestao.titulo.trim() || !novaSugestao.descricao.trim() ? COR.cinza200 : COR.teal, color: !novaSugestao.titulo.trim() || !novaSugestao.descricao.trim() ? COR.cinza400 : '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: !novaSugestao.titulo.trim() || !novaSugestao.descricao.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
               Publicar sugestão
@@ -999,7 +1174,29 @@ export default function Condominio() {
               {/* ABA DETALHES */}
               {abaDetalhe === 'detalhes' && (
                 <div>
-                  <p style={{ fontSize: 14, color: COR.cinza700, lineHeight: 1.7, marginBottom: 24 }}>{detalheAberto.descricao}</p>
+                  <p style={{ fontSize: 14, color: COR.cinza700, lineHeight: 1.7, marginBottom: 16 }}>{detalheAberto.descricao}</p>
+
+                  {/* GALERIA DE FOTOS */}
+                  <GaleriaFotos fotos={detalheAberto.fotos || []} onAmplia={setFotoAmpliada} COR={COR} />
+
+                  {/* BOTÕES EDITAR / APAGAR (só autor, só sem votos de outros) */}
+                  {podEditarApagar(detalheAberto) && detalheAberto.status !== 'arquivado' && (
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 20, padding: '12px 14px', background: COR.azulLight, borderRadius: 8, alignItems: 'center' }}>
+                      <div style={{ fontSize: 12, color: COR.azul, flex: 1 }}>Esta é a sua sugestão e ainda não tem votos de outros moradores.</div>
+                      <button
+                        onClick={() => setEditandoSugestao({ ...detalheAberto })}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: `1.5px solid ${COR.azul}`, borderRadius: 6, background: COR.branco, color: COR.azul, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
+                        <Edit2 size={13} /> Editar
+                      </button>
+                      <button
+                        onClick={() => apagarSugestao(detalheAberto.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: `1.5px solid ${COR.vinho}`, borderRadius: 6, background: COR.branco, color: COR.vinho, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
+                        <Trash2 size={13} /> Apagar
+                      </button>
+                    </div>
+                  )}
 
                   {detalheAberto.status === 'arquivado' && (
                     <div style={{ background: COR.cinza100, border: `1px solid ${COR.cinza200}`, borderRadius: 8, padding: 14, marginBottom: 20 }}>
@@ -1241,6 +1438,84 @@ export default function Condominio() {
           </div>
         );
       })()}
+
+      {/* MODAL FOTO AMPLIADA */}
+      {fotoAmpliada && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 }}
+          onClick={() => setFotoAmpliada(null)}
+        >
+          <button onClick={() => setFotoAmpliada(null)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
+            <X size={20} />
+          </button>
+          <img
+            src={fotoAmpliada}
+            alt="Foto ampliada"
+            style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 8px 64px rgba(0,0,0,0.8)' }}
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* MODAL EDITAR SUGESTÃO */}
+      {editandoSugestao && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,45,79,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 80 }} onClick={() => setEditandoSugestao(null)}>
+          <div style={{ background: COR.branco, borderRadius: 16, padding: 32, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 48px rgba(27,45,79,0.2)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: COR.azul, display: 'flex', alignItems: 'center', gap: 8 }}><Edit2 size={18} /> Editar sugestão</div>
+              <button onClick={() => setEditandoSugestao(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: COR.cinza400 }}><X size={20} /></button>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={label}>Título</label>
+              <input style={input} value={editandoSugestao.titulo} onChange={e => setEditandoSugestao({...editandoSugestao, titulo: e.target.value})} maxLength={80} />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={label}>Categoria</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                {CATEGORIES.map(cat => {
+                  const Icon = cat.icon;
+                  const ativo = editandoSugestao.categoria === cat.id;
+                  return (
+                    <button key={cat.id} onClick={() => setEditandoSugestao({...editandoSugestao, categoria: cat.id})} style={{ padding: '10px 6px', border: `1.5px solid ${ativo ? COR.teal : COR.cinza200}`, borderRadius: 8, background: ativo ? COR.tealLight : COR.branco, color: ativo ? COR.teal : COR.cinza700, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+                      <Icon size={16} /> {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={label}>Descrição</label>
+              <textarea value={editandoSugestao.descricao} onChange={e => setEditandoSugestao({...editandoSugestao, descricao: e.target.value})} maxLength={800} style={{ ...input, minHeight: 120, resize: 'vertical' }} />
+            </div>
+
+            <PainelFotos
+              fotos={editandoSugestao.fotos || []}
+              linkFoto={linkFoto}
+              setLinkFoto={setLinkFoto}
+              uploadando={uploadandoFoto}
+              onAdicionarLink={() => adicionarFotoLink(editandoSugestao, setEditandoSugestao)}
+              onUpload={(e) => adicionarFotoUpload(e, editandoSugestao, setEditandoSugestao)}
+              onRemover={(idx) => removerFoto(idx, editandoSugestao, setEditandoSugestao)}
+              onAmplia={setFotoAmpliada}
+              COR={COR}
+              input={input}
+              label={label}
+            />
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={salvarEdicao} disabled={!editandoSugestao.titulo.trim() || !editandoSugestao.descricao.trim()} style={{ flex: 1, padding: 12, background: !editandoSugestao.titulo.trim() || !editandoSugestao.descricao.trim() ? COR.cinza200 : COR.teal, color: !editandoSugestao.titulo.trim() || !editandoSugestao.descricao.trim() ? COR.cinza400 : '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Salvar alterações
+              </button>
+              <button onClick={() => setEditandoSugestao(null)} style={{ padding: '12px 20px', background: COR.cinza100, color: COR.cinza700, border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
