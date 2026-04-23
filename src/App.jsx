@@ -45,7 +45,15 @@ const COR = {
 
 // ============ CONFIGURAÇÕES ============
 const TOTAL_APARTAMENTOS = 98;
-const PALAVRAS_BLOQUEADAS = ['airbnb', 'aluguel por temporada', 'locação curta', 'locação de curta duração', 'booking.com', 'hospedagem temporada', 'aluguel diário', 'por temporada', 'short stay'];
+const PALAVRAS_BLOQUEADAS_DEFAULT = [
+  // Locação por temporada
+  'airbnb', 'aluguel por temporada', 'locação curta', 'locação de curta duração',
+  'booking.com', 'hospedagem temporada', 'aluguel diário', 'por temporada', 'short stay',
+  // Fumo e derivados
+  'cigarro', 'fumar', 'fumo', 'fumante', 'área de fumantes', 'espaço para fumar',
+  'vaping', 'vape', 'narguilé', 'charuto', 'cachimbo', 'cigarro eletrônico',
+  'maconha', 'cannabis', 'tabaco',
+];
 const COOLDOWN_SUGESTAO_HORAS = 24;
 const MAX_COMENTARIOS_POR_SUGESTAO = 3;
 const MIN_CARACTERES_DESCRICAO = 50;
@@ -100,10 +108,11 @@ const contarVotos = (votos = []) => ({
   total: votos.length,
 });
 
-const verificarPalavrasBloqueadas = (texto) => {
+const verificarPalavrasBloqueadas = (texto, listaDinamica = []) => {
   const t = texto.toLowerCase();
-  for (const p of PALAVRAS_BLOQUEADAS) {
-    if (t.includes(p)) return p;
+  const todasPalavras = [...PALAVRAS_BLOQUEADAS_DEFAULT, ...listaDinamica.map(p => p.palavra?.toLowerCase()).filter(Boolean)];
+  for (const p of todasPalavras) {
+    if (t.includes(p.toLowerCase())) return p;
   }
   return null;
 };
@@ -275,9 +284,13 @@ export default function Condominio() {
   const [usandoSupabase] = useState(SUPABASE_URL !== 'COLE_SUA_URL_AQUI');
   // Fotos e edição
   const [fotoAmpliada, setFotoAmpliada] = useState(null);
-  const [editandoSugestao, setEditandoSugestao] = useState(null); // sugestão sendo editada
+  const [editandoSugestao, setEditandoSugestao] = useState(null);
   const [linkFoto, setLinkFoto] = useState('');
   const [uploadandoFoto, setUploadandoFoto] = useState(false);
+  // Palavras vetadas
+  const [palavrasVetadas, setPalavrasVetadas] = useState([]);
+  const [novaPalavra, setNovaPalavra] = useState('');
+  const [motivoPalavra, setMotivoPalavra] = useState('');
 
   // ---- LOAD ----
   useEffect(() => {
@@ -285,12 +298,14 @@ export default function Condominio() {
       setLoading(true);
       if (usandoSupabase) {
         try {
-          const [sRows, vRows, oRows, cRows] = await Promise.all([
+          const [sRows, vRows, oRows, cRows, pvRows] = await Promise.all([
             sb('sugestoes?select=*,comentarios(*),orcamentos(*)&order=created_at.desc'),
             sb('votos_sugestao?select=*'),
             sb('votos_orcamento?select=*'),
             sb('conselho?select=apto'),
+            sb('palavras_vetadas?select=*&order=created_at.asc'),
           ]);
+          setPalavrasVetadas(pvRows || []);
           const votosMap = {};
           (vRows || []).forEach(v => {
             if (!votosMap[v.sugestao_id]) votosMap[v.sugestao_id] = [];
@@ -389,7 +404,7 @@ export default function Condominio() {
     if (!editandoSugestao) return;
     const { titulo, descricao, categoria, fotos } = editandoSugestao;
     if (!titulo.trim() || !descricao.trim()) return;
-    const bloqueada = verificarPalavrasBloqueadas(`${titulo} ${descricao}`);
+    const bloqueada = verificarPalavrasBloqueadas(`${titulo} ${descricao}`, palavrasVetadas);
     if (bloqueada) { alert(`Texto menciona tema fora da convenção ("${bloqueada}").`); return; }
     if (usandoSupabase) {
       await sb(`sugestoes?id=eq.${editandoSugestao.id}`, {
@@ -487,7 +502,7 @@ export default function Condominio() {
   const criarSugestao = async () => {
     setAvisoNova('');
     const textoCompleto = `${novaSugestao.titulo} ${novaSugestao.descricao}`;
-    const bloqueada = verificarPalavrasBloqueadas(textoCompleto);
+    const bloqueada = verificarPalavrasBloqueadas(textoCompleto, palavrasVetadas);
     if (bloqueada) {
       setAvisoNova(`Essa proposta contém um tema ("${bloqueada}") que não está previsto na convenção do condomínio. Por favor, consulte o regulamento interno ou o síndico.`);
       return;
@@ -535,7 +550,7 @@ export default function Condominio() {
       alert(`Limite de ${MAX_COMENTARIOS_POR_SUGESTAO} comentários por morador nesta sugestão.`);
       return;
     }
-    const bloqueada = verificarPalavrasBloqueadas(novoComentario);
+    const bloqueada = verificarPalavrasBloqueadas(novoComentario, palavrasVetadas);
     if (bloqueada) { alert(`Comentário menciona tema fora da convenção ("${bloqueada}").`); return; }
 
     const novo = { autorApto: usuario.apto, autorNome: usuario.nome, texto: novoComentario.trim(), data: new Date().toISOString().split('T')[0] };
@@ -642,6 +657,35 @@ export default function Condominio() {
     }
     setConselho(novo);
     if (!usandoSupabase) await salvarLocal('conselho_duock', novo, true);
+  };
+
+  // ---- PALAVRAS VETADAS ----
+  const adicionarPalavraVetada = async () => {
+    if (!novaPalavra.trim()) return;
+    const palavra = novaPalavra.trim().toLowerCase();
+    if (palavrasVetadas.some(p => p.palavra?.toLowerCase() === palavra)) {
+      alert('Esta palavra já está na lista.');
+      return;
+    }
+    const nova = {
+      palavra,
+      adicionada_por: `${usuario.nome} — Apto ${usuario.apto}`,
+      motivo: motivoPalavra.trim() || 'Adicionada pelo conselho',
+    };
+    if (usandoSupabase) {
+      const [row] = await sb('palavras_vetadas', { method: 'POST', body: JSON.stringify(nova) });
+      setPalavrasVetadas(prev => [...prev, row]);
+    } else {
+      setPalavrasVetadas(prev => [...prev, { ...nova, id: `local_${Date.now()}` }]);
+    }
+    setNovaPalavra('');
+    setMotivoPalavra('');
+  };
+
+  const removerPalavraVetada = async (id) => {
+    if (!confirm('Remover esta palavra da lista de bloqueio?')) return;
+    if (usandoSupabase) await sb(`palavras_vetadas?id=eq.${id}`, { method: 'DELETE', prefer: '' });
+    setPalavrasVetadas(prev => prev.filter(p => p.id !== id));
   };
 
   // ---- FILTROS ----
@@ -1118,6 +1162,75 @@ export default function Condominio() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* PALAVRAS VETADAS */}
+            <div style={{ borderTop: `1px solid ${COR.cinza200}`, paddingTop: 24 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: COR.vinho, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Ban size={13} /> Palavras vetadas pela convenção
+              </div>
+              <div style={{ background: COR.vinhoLight, borderRadius: 6, padding: '8px 12px', fontSize: 12, color: COR.vinho, marginBottom: 16 }}>
+                Propostas ou comentários que contenham qualquer palavra abaixo serão automaticamente bloqueados. As palavras padrão do sistema não aparecem aqui mas continuam ativas.
+              </div>
+
+              {/* Lista de palavras do banco */}
+              <div style={{ marginBottom: 16 }}>
+                {palavrasVetadas.length === 0 ? (
+                  <p style={{ fontSize: 13, color: COR.cinza400, fontStyle: 'italic' }}>Nenhuma palavra extra cadastrada. As palavras padrão do sistema estão ativas.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {palavrasVetadas.map(p => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: COR.cinza100, borderRadius: 6, padding: '8px 12px' }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 700, color: COR.vinho, fontSize: 13 }}>"{p.palavra}"</span>
+                          {p.motivo && <span style={{ fontSize: 11, color: COR.cinza400, marginLeft: 8 }}>— {p.motivo}</span>}
+                          <div style={{ fontSize: 10, color: COR.cinza400, marginTop: 2 }}>Adicionada por {p.adicionada_por}</div>
+                        </div>
+                        <button onClick={() => removerPalavraVetada(p.id)} style={{ background: 'none', border: 'none', color: COR.vinho, cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Adicionar nova palavra */}
+              <div style={{ background: COR.cinza100, borderRadius: 8, padding: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COR.cinza700, marginBottom: 10 }}>Adicionar nova palavra ou frase vetada</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <input
+                    value={novaPalavra}
+                    onChange={e => setNovaPalavra(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && adicionarPalavraVetada()}
+                    placeholder="Ex: festa particular, animais soltos..."
+                    style={{ ...input, flex: 1, fontSize: 13 }}
+                  />
+                  <button
+                    onClick={adicionarPalavraVetada}
+                    disabled={!novaPalavra.trim()}
+                    style={{ padding: '8px 16px', background: !novaPalavra.trim() ? COR.cinza200 : COR.vinho, color: !novaPalavra.trim() ? COR.cinza400 : '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: !novaPalavra.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                  >
+                    + Adicionar
+                  </button>
+                </div>
+                <input
+                  value={motivoPalavra}
+                  onChange={e => setMotivoPalavra(e.target.value)}
+                  placeholder="Motivo do bloqueio (opcional) — ex: Vedado pela convenção art. 12"
+                  style={{ ...input, fontSize: 12, color: COR.cinza400 }}
+                />
+              </div>
+
+              {/* Palavras padrão do sistema (apenas visualização) */}
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: COR.cinza400, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Palavras padrão do sistema (não editáveis)</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {PALAVRAS_BLOQUEADAS_DEFAULT.map(p => (
+                    <span key={p} style={{ background: COR.cinza200, color: COR.cinza700, borderRadius: 4, padding: '3px 10px', fontSize: 11 }}>{p}</span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
