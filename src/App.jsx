@@ -706,11 +706,11 @@ export default function Condominio() {
 
           <div style={{ marginBottom: 16 }}>
             <label style={label}>Seu nome</label>
-            <input style={input} value={nomeInput} onChange={e => setNomeInput(e.target.value)} placeholder="Ex: Fabinho" />
+            <input style={input} value={nomeInput} onChange={e => setNomeInput(e.target.value)} placeholder="Seu nome completo" />
           </div>
           <div style={{ marginBottom: 20 }}>
             <label style={label}>Apartamento</label>
-            <input style={input} value={aptoInput} onChange={e => setAptoInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && fazerLogin()} placeholder="Ex: 1902B" />
+            <input style={input} value={aptoInput} onChange={e => setAptoInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && fazerLogin()} placeholder="Número do apartamento" />
           </div>
 
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 12, color: COR.cinza700, cursor: 'pointer', marginBottom: 24, lineHeight: 1.5 }}>
