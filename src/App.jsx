@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, ThumbsUp, ThumbsDown, MessageCircle, Download, X, User, Search, TrendingUp, CheckCircle2, Clock, Wrench, Sparkles, Shield, DollarSign, ScrollText, MoreHorizontal, Home, Phone, Mail, Globe, Calendar, Award, Briefcase, CircleDollarSign, FileCheck, Flag, Archive, AlertTriangle, Eye, EyeOff, UserCog, Ban, Users, Camera, Edit2, Trash2, Link, ZoomIn } from 'lucide-react';
+import { Plus, ThumbsUp, ThumbsDown, MessageCircle, Download, X, User, Search, TrendingUp, CheckCircle2, Clock, Wrench, Sparkles, Shield, DollarSign, ScrollText, MoreHorizontal, Home, Phone, Mail, Globe, Calendar, Award, Briefcase, CircleDollarSign, FileCheck, Flag, Archive, AlertTriangle, Eye, EyeOff, UserCog, Ban, Users, Camera, Edit2, Trash2, Link, ZoomIn, ClipboardList, BookOpen, CheckSquare, AlertCircle, Info } from 'lucide-react';
 
 // ============ SUPABASE CONFIG ============
 // Lê das variáveis de ambiente do Vercel — nunca hardcoded em produção
@@ -249,6 +249,287 @@ function GaleriaFotos({ fotos, onAmplia, COR }) {
   );
 }
 
+// ============ SEÇÃO MANUTENÇÕES ============
+function SecaoManutencoes({ manutencoes, filtro, setFiltro, ehConselho, modoConselho, usuario, registrandoManutencao, setRegistrandoManutencao, dataRealizacao, setDataRealizacao, obsRealizacao, setObsRealizacao, registrarRealizacao, abrirNovaManutencao, setAbrirNovaManutencao, novaManutencao, setNovaManutencao, criarManutencao, excluirManutencao, diasParaProxima, COR, input, label }) {
+
+  const PERIODOS = ['todas', 'Mensal', 'Trimestral', 'Semestral', 'Anual', 'A cada 2 anos', 'A cada 3 anos'];
+
+  const manutencoesFilradas = filtro === 'todas' ? manutencoes : manutencoes.filter(m => m.periodicidade === filtro);
+
+  const getStatusCor = (m) => {
+    const dias = diasParaProxima(m);
+    if (!m.ultima_realizacao) return { bg: '#FEF3C7', text: '#92400E', label: 'Nunca realizada', urgente: true };
+    if (dias === null) return { bg: COR.cinza100, text: COR.cinza400, label: 'Sem data próxima', urgente: false };
+    if (dias < 0) return { bg: '#FEE2E2', text: '#991B1B', label: `Atrasada ${Math.abs(dias)} dias`, urgente: true };
+    if (dias <= 30) return { bg: '#FEF3C7', text: '#92400E', label: `${dias} dias restantes`, urgente: true };
+    if (dias <= 90) return { bg: '#E6F2F3', text: COR.teal, label: `${dias} dias restantes`, urgente: false };
+    return { bg: '#D1FAE5', text: '#065F46', label: `${dias} dias restantes`, urgente: false };
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: COR.azul, letterSpacing: '-0.01em' }}>Manutenções Preventivas</div>
+          <div style={{ fontSize: 13, color: COR.cinza400, marginTop: 2 }}>Baseado no Manual do Proprietário · Construtora CK</div>
+        </div>
+        {modoConselho && (
+          <button onClick={() => setAbrirNovaManutencao(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: COR.teal, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <Plus size={15} /> Nova manutenção
+          </button>
+        )}
+      </div>
+
+      {/* Alerta de itens críticos */}
+      {manutencoes.some(m => { const s = diasParaProxima(m); return !m.ultima_realizacao || (s !== null && s < 0); }) && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <AlertCircle size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <div style={{ fontWeight: 700, color: '#DC2626', fontSize: 13 }}>Atenção — manutenções críticas pendentes</div>
+            <div style={{ fontSize: 12, color: '#7F1D1D', marginTop: 2 }}>Itens nunca realizados ou atrasados podem cancelar a garantia da construtora. Verifique os itens marcados em vermelho abaixo.</div>
+          </div>
+        </div>
+      )}
+
+      {/* Filtros por periodicidade */}
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 20 }}>
+        {PERIODOS.map(p => (
+          <button key={p} onClick={() => setFiltro(p)} style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${filtro === p ? COR.azul : COR.cinza200}`, background: filtro === p ? COR.azul : 'transparent', color: filtro === p ? '#fff' : COR.cinza400, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            {p === 'todas' ? 'Todas' : p}
+          </button>
+        ))}
+      </div>
+
+      {/* Modal nova manutenção */}
+      {abrirNovaManutencao && (
+        <div style={{ background: COR.tealLight, border: `1px solid ${COR.teal}30`, borderRadius: 10, padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COR.teal }}>Nova manutenção</div>
+            <button onClick={() => setAbrirNovaManutencao(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: COR.cinza400 }}><X size={16} /></button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <input placeholder="Título *" value={novaManutencao.titulo} onChange={e => setNovaManutencao({...novaManutencao, titulo: e.target.value})} style={{...input, gridColumn: 'span 2'}} />
+            <input placeholder="Sistema (ex: Fachada, Elétrica...)" value={novaManutencao.sistema} onChange={e => setNovaManutencao({...novaManutencao, sistema: e.target.value})} style={input} />
+            <select value={novaManutencao.periodicidade} onChange={e => setNovaManutencao({...novaManutencao, periodicidade: e.target.value})} style={{...input, cursor: 'pointer'}}>
+              {['Mensal', 'Trimestral', 'Semestral', 'Anual', 'A cada 2 anos', 'A cada 3 anos', 'A cada 5 anos'].map(p => <option key={p}>{p}</option>)}
+            </select>
+            <input placeholder="Responsável" value={novaManutencao.responsavel} onChange={e => setNovaManutencao({...novaManutencao, responsavel: e.target.value})} style={{...input, gridColumn: 'span 2'}} />
+          </div>
+          <textarea placeholder="Descrição detalhada da manutenção..." value={novaManutencao.descricao} onChange={e => setNovaManutencao({...novaManutencao, descricao: e.target.value})} style={{...input, minHeight: 80, resize: 'vertical', marginBottom: 10}} />
+          <button onClick={criarManutencao} disabled={!novaManutencao.titulo.trim()} style={{ padding: '9px 20px', background: !novaManutencao.titulo.trim() ? COR.cinza200 : COR.teal, color: !novaManutencao.titulo.trim() ? COR.cinza400 : '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Criar manutenção</button>
+        </div>
+      )}
+
+      {/* Lista de manutenções */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {manutencoesFilradas.map(m => {
+          const status = getStatusCor(m);
+          const dias = diasParaProxima(m);
+          const registrando = registrandoManutencao?.id === m.id;
+
+          return (
+            <div key={m.id} style={{ background: COR.branco, border: `1.5px solid ${status.urgente ? (dias !== null && dias < 0 ? '#FECACA' : '#FDE68A') : COR.cinza200}`, borderRadius: 10, padding: 18, transition: 'border-color 0.15s' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                    {m.sistema && (
+                      <span style={{ background: COR.azulLight, color: COR.azul, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{m.sistema}</span>
+                    )}
+                    <span style={{ background: COR.cinza100, color: COR.cinza700, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{m.periodicidade}</span>
+                    {m.titulo.includes('⚠️') && (
+                      <span style={{ background: '#FEF3C7', color: '#92400E', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>GARANTIA EM RISCO</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: COR.azul, marginBottom: 4 }}>{m.titulo.replace(' ⚠️', '')}</div>
+                  {m.descricao && <div style={{ fontSize: 12, color: COR.cinza400, lineHeight: 1.5, marginBottom: 8 }}>{m.descricao}</div>}
+                  {m.responsavel && <div style={{ fontSize: 12, color: COR.cinza400 }}>Responsável: {m.responsavel}</div>}
+
+                  {m.ultima_realizacao && (
+                    <div style={{ marginTop: 8, fontSize: 12, color: COR.cinza700 }}>
+                      Última realização: <strong>{new Date(m.ultima_realizacao + 'T12:00:00').toLocaleDateString('pt-BR')}</strong>
+                      {m.realizado_por && ` — por ${m.realizado_por}`}
+                      {m.observacoes_realizacao && <div style={{ color: COR.cinza400, fontStyle: 'italic', marginTop: 2 }}>{m.observacoes_realizacao}</div>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Contador de dias */}
+                <div style={{ textAlign: 'center', minWidth: 110, background: status.bg, borderRadius: 10, padding: '12px 16px', flexShrink: 0 }}>
+                  {dias !== null ? (
+                    <>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: status.text, lineHeight: 1, letterSpacing: '-0.03em' }}>
+                        {Math.abs(dias)}
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: status.text, marginTop: 2 }}>
+                        {dias < 0 ? 'dias atrasada' : dias === 0 ? 'hoje!' : 'dias restantes'}
+                      </div>
+                      {m.proxima_data && (
+                        <div style={{ fontSize: 10, color: status.text, marginTop: 4, opacity: 0.8 }}>
+                          Próxima: {new Date(m.proxima_data + 'T12:00:00').toLocaleDateString('pt-BR')}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle size={24} color={status.text} style={{ margin: '0 auto 4px' }} />
+                      <div style={{ fontSize: 11, fontWeight: 700, color: status.text }}>Nunca realizada</div>
+                    </>
+                  )}
+
+                  {modoConselho && (
+                    <button
+                      onClick={() => { setRegistrandoManutencao(m); setDataRealizacao(new Date().toISOString().split('T')[0]); setObsRealizacao(''); }}
+                      style={{ marginTop: 8, width: '100%', padding: '6px', background: COR.teal, color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                    >
+                      <CheckSquare size={12} /> Registrar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Formulário de registro */}
+              {registrando && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${COR.cinza200}`, background: COR.tealLight, borderRadius: 8, padding: 14, marginTop: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COR.teal, marginBottom: 10 }}>Registrar realização desta manutenção</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                    <div style={{ flex: 1, minWidth: 180 }}>
+                      <label style={label}>Data de realização</label>
+                      <input type="date" value={dataRealizacao} onChange={e => setDataRealizacao(e.target.value)} style={input} />
+                    </div>
+                    <div style={{ flex: 2, minWidth: 200 }}>
+                      <label style={label}>Empresa / Observações (opcional)</label>
+                      <input placeholder="Ex: Empresa XYZ, NF 1234..." value={obsRealizacao} onChange={e => setObsRealizacao(e.target.value)} style={input} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: COR.teal, marginBottom: 10, fontStyle: 'italic' }}>
+                    A próxima data será calculada automaticamente conforme a periodicidade ({m.periodicidade}).
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={registrarRealizacao} style={{ padding: '9px 20px', background: COR.teal, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <CheckSquare size={14} /> Confirmar registro
+                    </button>
+                    <button onClick={() => setRegistrandoManutencao(null)} style={{ padding: '9px 16px', background: COR.cinza200, color: COR.cinza700, border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
+              {modoConselho && !registrando && (
+                <button onClick={() => excluirManutencao(m.id)} style={{ marginTop: 8, background: 'none', border: 'none', color: '#DC2626', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>Excluir</button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============ SEÇÃO INFORMAÇÕES ============
+function SecaoInformacoes({ informacoes, categorias, filtroCategoria, setFiltroCategoria, usuario, editandoInfo, setEditandoInfo, salvarInfo, excluirInfo, abrirNovaInfo, setAbrirNovaInfo, novaInfo, setNovaInfo, criarInfo, COR, input, label }) {
+
+  const infoFiltradas = filtroCategoria === 'todas' ? informacoes : informacoes.filter(i => i.categoria === filtroCategoria);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: COR.azul, letterSpacing: '-0.01em' }}>Informações do Condomínio</div>
+          <div style={{ fontSize: 13, color: COR.cinza400, marginTop: 2 }}>Wiki colaborativo — qualquer morador pode adicionar e editar</div>
+        </div>
+        <button onClick={() => setAbrirNovaInfo(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: COR.teal, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <Plus size={15} /> Adicionar informação
+        </button>
+      </div>
+
+      {/* Filtros por categoria */}
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 20 }}>
+        {['todas', ...categorias].map(cat => (
+          <button key={cat} onClick={() => setFiltroCategoria(cat)} style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${filtroCategoria === cat ? COR.azul : COR.cinza200}`, background: filtroCategoria === cat ? COR.azul : 'transparent', color: filtroCategoria === cat ? '#fff' : COR.cinza400, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            {cat === 'todas' ? 'Todas' : cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Modal nova informação */}
+      {abrirNovaInfo && (
+        <div style={{ background: COR.tealLight, border: `1px solid ${COR.teal}30`, borderRadius: 10, padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COR.teal }}>Nova informação</div>
+            <button onClick={() => setAbrirNovaInfo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: COR.cinza400 }}><X size={16} /></button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <input placeholder="Categoria (ex: Contatos, Equipamentos...)" value={novaInfo.categoria} onChange={e => setNovaInfo({...novaInfo, categoria: e.target.value})} style={{...input}} />
+            <input placeholder="Título" value={novaInfo.titulo} onChange={e => setNovaInfo({...novaInfo, titulo: e.target.value})} style={{...input}} />
+          </div>
+          <textarea
+            placeholder="Conteúdo... Use linhas separadas para listas, ex:&#10;Porteiro: (47) 99999-9999&#10;Zelador: (47) 88888-8888"
+            value={novaInfo.conteudo}
+            onChange={e => setNovaInfo({...novaInfo, conteudo: e.target.value})}
+            style={{...input, minHeight: 120, resize: 'vertical', marginBottom: 10}}
+          />
+          <button onClick={criarInfo} disabled={!novaInfo.titulo.trim() || !novaInfo.conteudo.trim() || !novaInfo.categoria.trim()} style={{ padding: '9px 20px', background: !novaInfo.titulo.trim() || !novaInfo.conteudo.trim() || !novaInfo.categoria.trim() ? COR.cinza200 : COR.teal, color: !novaInfo.titulo.trim() || !novaInfo.conteudo.trim() || !novaInfo.categoria.trim() ? COR.cinza400 : '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Publicar</button>
+        </div>
+      )}
+
+      {/* Cards de informação agrupados por categoria */}
+      {categorias.filter(c => filtroCategoria === 'todas' || c === filtroCategoria).map(cat => {
+        const itens = informacoes.filter(i => i.categoria === cat);
+        if (itens.length === 0) return null;
+        return (
+          <div key={cat} style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: COR.azul, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Info size={14} /> {cat}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+              {itens.map(info => {
+                const editando = editandoInfo?.id === info.id;
+                return (
+                  <div key={info.id} style={{ background: COR.branco, border: `1px solid ${COR.cinza200}`, borderRadius: 10, padding: 18 }}>
+                    {editando ? (
+                      <div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                          <input value={editandoInfo.categoria} onChange={e => setEditandoInfo({...editandoInfo, categoria: e.target.value})} placeholder="Categoria" style={{...input, fontSize: 13}} />
+                          <input value={editandoInfo.titulo} onChange={e => setEditandoInfo({...editandoInfo, titulo: e.target.value})} placeholder="Título" style={{...input, fontSize: 13}} />
+                        </div>
+                        <textarea value={editandoInfo.conteudo} onChange={e => setEditandoInfo({...editandoInfo, conteudo: e.target.value})} style={{...input, minHeight: 100, resize: 'vertical', fontSize: 13, marginBottom: 8}} />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button onClick={salvarInfo} style={{ padding: '7px 16px', background: COR.teal, color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Salvar</button>
+                          <button onClick={() => setEditandoInfo(null)} style={{ padding: '7px 12px', background: COR.cinza200, color: COR.cinza700, border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontWeight: 700, color: COR.azul, marginBottom: 8, fontSize: 14 }}>{info.titulo}</div>
+                        <div style={{ fontSize: 13, color: COR.cinza700, lineHeight: 1.7, whiteSpace: 'pre-line' }}>{info.conteudo}</div>
+                        <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${COR.cinza200}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 11, color: COR.cinza400 }}>Por {info.autor_nome} — Apto {info.autor_apto}</span>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => setEditandoInfo({...info})} style={{ background: 'none', border: 'none', color: COR.teal, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Edit2 size={12} /> Editar
+                            </button>
+                            <button onClick={() => excluirInfo(info.id)} style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Excluir</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {infoFiltradas.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: COR.cinza400 }}>
+          <BookOpen size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+          <div style={{ fontStyle: 'italic' }}>Nenhuma informação ainda. Seja o primeiro a contribuir!</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Condominio() {
   const [usuario, setUsuario] = useState(null);
   const [nomeInput, setNomeInput] = useState('');
@@ -291,6 +572,22 @@ export default function Condominio() {
   const [palavrasVetadas, setPalavrasVetadas] = useState([]);
   const [novaPalavra, setNovaPalavra] = useState('');
   const [motivoPalavra, setMotivoPalavra] = useState('');
+  // Navegação principal
+  const [abaApp, setAbaApp] = useState('sugestoes'); // sugestoes | manutencoes | informacoes
+  // Manutenções
+  const [manutencoes, setManutencoes] = useState([]);
+  const [registrandoManutencao, setRegistrandoManutencao] = useState(null);
+  const [dataRealizacao, setDataRealizacao] = useState('');
+  const [obsRealizacao, setObsRealizacao] = useState('');
+  const [novaManutencao, setNovaManutencao] = useState({ titulo: '', descricao: '', periodicidade: 'Anual', responsavel: '', sistema: '' });
+  const [abrirNovaManutencao, setAbrirNovaManutencao] = useState(false);
+  const [filtroManutencao, setFiltroManutencao] = useState('todas');
+  // Informações
+  const [informacoes, setInformacoes] = useState([]);
+  const [editandoInfo, setEditandoInfo] = useState(null);
+  const [novaInfo, setNovaInfo] = useState({ categoria: '', titulo: '', conteudo: '' });
+  const [abrirNovaInfo, setAbrirNovaInfo] = useState(false);
+  const [categoriaInfoFiltro, setCategoriaInfoFiltro] = useState('todas');
 
   // ---- LOAD ----
   useEffect(() => {
@@ -298,14 +595,18 @@ export default function Condominio() {
       setLoading(true);
       if (usandoSupabase) {
         try {
-          const [sRows, vRows, oRows, cRows, pvRows] = await Promise.all([
+          const [sRows, vRows, oRows, cRows, pvRows, mRows, iRows] = await Promise.all([
             sb('sugestoes?select=*,comentarios(*),orcamentos(*)&order=created_at.desc'),
             sb('votos_sugestao?select=*'),
             sb('votos_orcamento?select=*'),
             sb('conselho?select=apto'),
             sb('palavras_vetadas?select=*&order=created_at.asc'),
+            sb('manutencoes?select=*&order=sistema.asc,periodicidade.asc'),
+            sb('informacoes?select=*&order=categoria.asc,created_at.asc'),
           ]);
           setPalavrasVetadas(pvRows || []);
+          setManutencoes(mRows || []);
+          setInformacoes(iRows || []);
           const votosMap = {};
           (vRows || []).forEach(v => {
             if (!votosMap[v.sugestao_id]) votosMap[v.sugestao_id] = [];
@@ -688,6 +989,124 @@ export default function Condominio() {
     setPalavrasVetadas(prev => prev.filter(p => p.id !== id));
   };
 
+  // ---- MANUTENÇÕES ----
+  const diasParaProxima = (m) => {
+    if (!m.ultima_realizacao || !m.proxima_data) return null;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const proxima = new Date(m.proxima_data);
+    proxima.setHours(0, 0, 0, 0);
+    return Math.ceil((proxima - hoje) / (1000 * 60 * 60 * 24));
+  };
+
+  const calcularProximaData = (dataRealizacao, periodicidade) => {
+    const d = new Date(dataRealizacao);
+    const p = periodicidade.toLowerCase();
+    if (p.includes('mensal') || p.includes('1 mês')) d.setMonth(d.getMonth() + 1);
+    else if (p.includes('trimestral') || p.includes('3 meses')) d.setMonth(d.getMonth() + 3);
+    else if (p.includes('semestral') || p.includes('6 meses')) d.setMonth(d.getMonth() + 6);
+    else if (p.includes('anual') || p.includes('1 ano')) d.setFullYear(d.getFullYear() + 1);
+    else if (p.includes('2 anos')) d.setFullYear(d.getFullYear() + 2);
+    else if (p.includes('3 anos')) d.setFullYear(d.getFullYear() + 3);
+    else if (p.includes('5 anos')) d.setFullYear(d.getFullYear() + 5);
+    else d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().split('T')[0];
+  };
+
+  const registrarRealizacao = async () => {
+    if (!dataRealizacao || !registrandoManutencao) return;
+    const proxima = calcularProximaData(dataRealizacao, registrandoManutencao.periodicidade);
+    const update = {
+      ultima_realizacao: dataRealizacao,
+      proxima_data: proxima,
+      realizado_por: `${usuario.nome} — Apto ${usuario.apto}`,
+      observacoes_realizacao: obsRealizacao.trim() || null,
+    };
+    if (usandoSupabase) {
+      await sb(`manutencoes?id=eq.${registrandoManutencao.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(update),
+        prefer: 'return=minimal',
+      });
+    }
+    setManutencoes(prev => prev.map(m => m.id === registrandoManutencao.id ? { ...m, ...update } : m));
+    setRegistrandoManutencao(null);
+    setDataRealizacao('');
+    setObsRealizacao('');
+  };
+
+  const criarManutencao = async () => {
+    if (!novaManutencao.titulo.trim()) return;
+    const nova = {
+      ...novaManutencao,
+      criado_por: `${usuario.nome} — Apto ${usuario.apto}`,
+    };
+    if (usandoSupabase) {
+      const [row] = await sb('manutencoes', { method: 'POST', body: JSON.stringify(nova) });
+      setManutencoes(prev => [...prev, row]);
+    } else {
+      setManutencoes(prev => [...prev, { ...nova, id: `local_${Date.now()}` }]);
+    }
+    setNovaManutencao({ titulo: '', descricao: '', periodicidade: 'Anual', responsavel: '', sistema: '' });
+    setAbrirNovaManutencao(false);
+  };
+
+  const excluirManutencao = async (id) => {
+    if (!confirm('Excluir esta manutenção?')) return;
+    if (usandoSupabase) await sb(`manutencoes?id=eq.${id}`, { method: 'DELETE', prefer: '' });
+    setManutencoes(prev => prev.filter(m => m.id !== id));
+  };
+
+  // ---- INFORMAÇÕES ----
+  const categoriasInfo = useMemo(() => {
+    const cats = [...new Set(informacoes.map(i => i.categoria))];
+    return cats.sort();
+  }, [informacoes]);
+
+  const criarInfo = async () => {
+    if (!novaInfo.titulo.trim() || !novaInfo.conteudo.trim() || !novaInfo.categoria.trim()) return;
+    const nova = {
+      ...novaInfo,
+      autor_apto: usuario.apto,
+      autor_nome: usuario.nome,
+    };
+    if (usandoSupabase) {
+      const [row] = await sb('informacoes', { method: 'POST', body: JSON.stringify(nova) });
+      setInformacoes(prev => [...prev, row]);
+    } else {
+      setInformacoes(prev => [...prev, { ...nova, id: `local_${Date.now()}` }]);
+    }
+    setNovaInfo({ categoria: '', titulo: '', conteudo: '' });
+    setAbrirNovaInfo(false);
+  };
+
+  const salvarInfo = async () => {
+    if (!editandoInfo) return;
+    const update = {
+      titulo: editandoInfo.titulo,
+      conteudo: editandoInfo.conteudo,
+      categoria: editandoInfo.categoria,
+      autor_apto: usuario.apto,
+      autor_nome: usuario.nome,
+      updated_at: new Date().toISOString(),
+    };
+    if (usandoSupabase) {
+      await sb(`informacoes?id=eq.${editandoInfo.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(update),
+        prefer: 'return=minimal',
+      });
+    }
+    setInformacoes(prev => prev.map(i => i.id === editandoInfo.id ? { ...i, ...update } : i));
+    setEditandoInfo(null);
+  };
+
+  const excluirInfo = async (id) => {
+    if (!confirm('Excluir esta informação?')) return;
+    if (usandoSupabase) await sb(`informacoes?id=eq.${id}`, { method: 'DELETE', prefer: '' });
+    setInformacoes(prev => prev.filter(i => i.id !== id));
+  };
+
   // ---- FILTROS ----
   const sugestoesFiltradas = useMemo(() => {
     let f = sugestoes.filter(s => s.status !== 'arquivado' || filtroStatus === 'arquivado' || ehConselho);
@@ -828,15 +1247,96 @@ export default function Condominio() {
               </div>
             ))}
           </div>
+
+          {/* NAVEGAÇÃO PRINCIPAL POR ABAS */}
+          <div style={{ display: 'flex', gap: 2, marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 4 }}>
+            {[
+              { id: 'sugestoes', label: 'Sugestões', Icon: MessageCircle },
+              { id: 'manutencoes', label: 'Manutenções', Icon: ClipboardList },
+              { id: 'informacoes', label: 'Informações', Icon: BookOpen },
+            ].map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => setAbaApp(id)}
+                style={{
+                  padding: '10px 20px',
+                  background: abaApp === id ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  color: abaApp === id ? '#fff' : 'rgba(255,255,255,0.5)',
+                  border: 'none',
+                  borderBottom: `2px solid ${abaApp === id ? COR.teal : 'transparent'}`,
+                  fontSize: 13,
+                  fontWeight: abaApp === id ? 700 : 400,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Icon size={15} /> {label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px' }}>
         {loading && (
-          <div style={{ textAlign: 'center', padding: 60, color: COR.cinza400 }}>Carregando sugestões...</div>
+          <div style={{ textAlign: 'center', padding: 60, color: COR.cinza400 }}>Carregando...</div>
         )}
 
-        {!loading && (
+        {!loading && abaApp === 'manutencoes' && (
+          <SecaoManutencoes
+            manutencoes={manutencoes}
+            filtro={filtroManutencao}
+            setFiltro={setFiltroManutencao}
+            ehConselho={ehConselho}
+            modoConselho={modoConselho}
+            usuario={usuario}
+            registrandoManutencao={registrandoManutencao}
+            setRegistrandoManutencao={setRegistrandoManutencao}
+            dataRealizacao={dataRealizacao}
+            setDataRealizacao={setDataRealizacao}
+            obsRealizacao={obsRealizacao}
+            setObsRealizacao={setObsRealizacao}
+            registrarRealizacao={registrarRealizacao}
+            abrirNovaManutencao={abrirNovaManutencao}
+            setAbrirNovaManutencao={setAbrirNovaManutencao}
+            novaManutencao={novaManutencao}
+            setNovaManutencao={setNovaManutencao}
+            criarManutencao={criarManutencao}
+            excluirManutencao={excluirManutencao}
+            diasParaProxima={diasParaProxima}
+            COR={COR}
+            input={input}
+            label={label}
+          />
+        )}
+
+        {!loading && abaApp === 'informacoes' && (
+          <SecaoInformacoes
+            informacoes={informacoes}
+            categorias={categoriasInfo}
+            filtroCategoria={categoriaInfoFiltro}
+            setFiltroCategoria={setCategoriaInfoFiltro}
+            usuario={usuario}
+            editandoInfo={editandoInfo}
+            setEditandoInfo={setEditandoInfo}
+            salvarInfo={salvarInfo}
+            excluirInfo={excluirInfo}
+            abrirNovaInfo={abrirNovaInfo}
+            setAbrirNovaInfo={setAbrirNovaInfo}
+            novaInfo={novaInfo}
+            setNovaInfo={setNovaInfo}
+            criarInfo={criarInfo}
+            COR={COR}
+            input={input}
+            label={label}
+          />
+        )}
+
+        {!loading && abaApp === 'sugestoes' && (
           <>
             {/* BARRA DE AÇÕES */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -1013,7 +1513,7 @@ export default function Condominio() {
             )}
 
             <div style={{ textAlign: 'center', fontSize: 12, color: COR.cinza400, marginTop: 48, paddingTop: 24, borderTop: `1px solid ${COR.cinza200}` }}>
-              Voz do Condomínio · Duo CK · {usandoSupabase ? '🟢 Conectado ao banco' : '🟡 Modo protótipo (dados temporários)'} · Um voto por apartamento
+              Voz do Condomínio · Duo CK · {usandoSupabase ? '🟢 Conectado ao banco' : '🟡 Modo protótipo'} · Um voto por apartamento
             </div>
           </>
         )}
