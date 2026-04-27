@@ -258,7 +258,7 @@ function SecaoManutencoes({ manutencoes, filtro, setFiltro, ehConselho, modoCons
 
   const getStatusCor = (m) => {
     const dias = diasParaProxima(m);
-    if (!m.ultima_realizacao) return { bg: '#FEF3C7', text: '#92400E', label: 'Nunca realizada', urgente: true };
+    if (!m.ultima_realizacao) return { bg: '#F7F7F8', text: '#9B9BA8', label: 'Não informado', urgente: false };
     if (dias === null) return { bg: COR.cinza100, text: COR.cinza400, label: 'Sem data próxima', urgente: false };
     if (dias < 0) return { bg: '#FEE2E2', text: '#991B1B', label: `Atrasada ${Math.abs(dias)} dias`, urgente: true };
     if (dias <= 30) return { bg: '#FEF3C7', text: '#92400E', label: `${dias} dias restantes`, urgente: true };
@@ -281,12 +281,12 @@ function SecaoManutencoes({ manutencoes, filtro, setFiltro, ehConselho, modoCons
       </div>
 
       {/* Alerta de itens críticos */}
-      {manutencoes.some(m => { const s = diasParaProxima(m); return !m.ultima_realizacao || (s !== null && s < 0); }) && (
+      {manutencoes.some(m => { const s = diasParaProxima(m); return (s !== null && s < 0); }) && (
         <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AlertCircle size={18} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
-            <div style={{ fontWeight: 700, color: '#DC2626', fontSize: 13 }}>Atenção — manutenções críticas pendentes</div>
-            <div style={{ fontSize: 12, color: '#7F1D1D', marginTop: 2 }}>Itens nunca realizados ou atrasados podem cancelar a garantia da construtora. Verifique os itens marcados em vermelho abaixo.</div>
+            <div style={{ fontWeight: 700, color: '#DC2626', fontSize: 13 }}>Atenção — manutenções com prazo vencido</div>
+            <div style={{ fontSize: 12, color: '#7F1D1D', marginTop: 2 }}>Itens em atraso podem colocar em risco a garantia da construtora. Verifique os itens marcados em vermelho abaixo.</div>
           </div>
         </div>
       )}
@@ -372,7 +372,7 @@ function SecaoManutencoes({ manutencoes, filtro, setFiltro, ehConselho, modoCons
                   ) : (
                     <>
                       <AlertCircle size={24} color={status.text} style={{ margin: '0 auto 4px' }} />
-                      <div style={{ fontSize: 11, fontWeight: 700, color: status.text }}>Nunca realizada</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: status.text }}>Não informado</div>
                     </>
                   )}
 
