@@ -249,6 +249,88 @@ function GaleriaFotos({ fotos, onAmplia, COR }) {
   );
 }
 
+// ============ SEÇÃO AVISOS ============
+function SecaoAvisos({ avisos, modoConselho, usuario, novoAviso, setNovoAviso, abrirNovoAviso, setAbrirNovoAviso, criarAviso, excluirAviso, COR, input, label }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: COR.azul, letterSpacing: '-0.01em' }}>Mural de Avisos</div>
+          <div style={{ fontSize: 13, color: COR.cinza400, marginTop: 2 }}>Comunicados oficiais do síndico e conselho</div>
+        </div>
+        {modoConselho && (
+          <button onClick={() => setAbrirNovoAviso(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: COR.vinho, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <Plus size={15} /> Novo aviso
+          </button>
+        )}
+      </div>
+
+      {/* Formulário novo aviso */}
+      {abrirNovoAviso && modoConselho && (
+        <div style={{ background: COR.vinhoLight, border: `1px solid ${COR.vinho}30`, borderRadius: 10, padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COR.vinho }}>Novo aviso</div>
+            <button onClick={() => setAbrirNovoAviso(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: COR.cinza400 }}><X size={16} /></button>
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={label}>Título</label>
+            <input value={novoAviso.titulo} onChange={e => setNovoAviso({...novoAviso, titulo: e.target.value})} placeholder="Ex: Corte de água amanhã" style={input} />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={label}>Conteúdo</label>
+            <textarea value={novoAviso.conteudo} onChange={e => setNovoAviso({...novoAviso, conteudo: e.target.value})} placeholder="Detalhe o aviso..." style={{...input, minHeight: 100, resize: 'vertical'}} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: COR.cinza700, cursor: 'pointer', marginBottom: 14 }}>
+            <input type="checkbox" checked={novoAviso.urgente} onChange={e => setNovoAviso({...novoAviso, urgente: e.target.checked})} style={{ accentColor: COR.vinho }} />
+            Marcar como urgente (aparece em destaque vermelho)
+          </label>
+          <button onClick={criarAviso} disabled={!novoAviso.titulo.trim() || !novoAviso.conteudo.trim()} style={{ padding: '9px 20px', background: !novoAviso.titulo.trim() || !novoAviso.conteudo.trim() ? COR.cinza200 : COR.vinho, color: !novoAviso.titulo.trim() || !novoAviso.conteudo.trim() ? COR.cinza400 : '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Publicar aviso
+          </button>
+        </div>
+      )}
+
+      {/* Lista de avisos */}
+      {avisos.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: COR.cinza400 }}>
+          <AlertCircle size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+          <div style={{ fontStyle: 'italic' }}>Nenhum aviso no momento.</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {avisos.map(aviso => (
+            <div key={aviso.id} style={{
+              background: aviso.urgente ? '#FEF2F2' : COR.branco,
+              border: `1.5px solid ${aviso.urgente ? '#FECACA' : COR.cinza200}`,
+              borderLeft: `4px solid ${aviso.urgente ? '#DC2626' : COR.azul}`,
+              borderRadius: 10,
+              padding: 20,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {aviso.urgente && (
+                    <span style={{ background: '#DC2626', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>URGENTE</span>
+                  )}
+                  <div style={{ fontSize: 16, fontWeight: 700, color: aviso.urgente ? '#DC2626' : COR.azul }}>{aviso.titulo}</div>
+                </div>
+                {modoConselho && (
+                  <button onClick={() => excluirAviso(aviso.id)} style={{ background: 'none', border: 'none', color: COR.cinza400, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit', flexShrink: 0 }}>
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+              <div style={{ fontSize: 14, color: COR.cinza700, lineHeight: 1.6, whiteSpace: 'pre-line', marginBottom: 12 }}>{aviso.conteudo}</div>
+              <div style={{ fontSize: 11, color: COR.cinza400 }}>
+                {aviso.autor_nome} — Apto {aviso.autor_apto} · {aviso.created_at ? new Date(aviso.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ============ SEÇÃO MANUTENÇÕES ============
 function SecaoManutencoes({ manutencoes, filtro, setFiltro, ehConselho, modoConselho, usuario, registrandoManutencao, setRegistrandoManutencao, dataRealizacao, setDataRealizacao, obsRealizacao, setObsRealizacao, registrarRealizacao, abrirNovaManutencao, setAbrirNovaManutencao, novaManutencao, setNovaManutencao, criarManutencao, excluirManutencao, diasParaProxima, COR, input, label }) {
 
@@ -573,7 +655,11 @@ export default function Condominio() {
   const [novaPalavra, setNovaPalavra] = useState('');
   const [motivoPalavra, setMotivoPalavra] = useState('');
   // Navegação principal
-  const [abaApp, setAbaApp] = useState('sugestoes'); // sugestoes | manutencoes | informacoes
+  const [abaApp, setAbaApp] = useState('sugestoes'); // sugestoes | avisos | manutencoes | informacoes
+  // Mural de avisos
+  const [avisos, setAvisos] = useState([]);
+  const [novoAviso, setNovoAviso] = useState({ titulo: '', conteudo: '', urgente: false });
+  const [abrirNovoAviso, setAbrirNovoAviso] = useState(false);
   // Manutenções
   const [manutencoes, setManutencoes] = useState([]);
   const [registrandoManutencao, setRegistrandoManutencao] = useState(null);
@@ -595,7 +681,7 @@ export default function Condominio() {
       setLoading(true);
       if (usandoSupabase) {
         try {
-          const [sRows, vRows, oRows, cRows, pvRows, mRows, iRows] = await Promise.all([
+          const [sRows, vRows, oRows, cRows, pvRows, mRows, iRows, aRows] = await Promise.all([
             sb('sugestoes?select=*,comentarios(*),orcamentos(*)&order=created_at.desc'),
             sb('votos_sugestao?select=*'),
             sb('votos_orcamento?select=*'),
@@ -603,10 +689,12 @@ export default function Condominio() {
             sb('palavras_vetadas?select=*&order=created_at.asc'),
             sb('manutencoes?select=*&order=sistema.asc,periodicidade.asc'),
             sb('informacoes?select=*&order=categoria.asc,created_at.asc'),
+            sb('avisos?select=*&order=created_at.desc'),
           ]);
           setPalavrasVetadas(pvRows || []);
           setManutencoes(mRows || []);
           setInformacoes(iRows || []);
+          setAvisos(aRows || []);
           const votosMap = {};
           (vRows || []).forEach(v => {
             if (!votosMap[v.sugestao_id]) votosMap[v.sugestao_id] = [];
@@ -1107,6 +1195,32 @@ export default function Condominio() {
     setInformacoes(prev => prev.filter(i => i.id !== id));
   };
 
+  // ---- AVISOS ----
+  const criarAviso = async () => {
+    if (!novoAviso.titulo.trim() || !novoAviso.conteudo.trim()) return;
+    const novo = {
+      titulo: novoAviso.titulo.trim(),
+      conteudo: novoAviso.conteudo.trim(),
+      urgente: novoAviso.urgente,
+      autor_apto: usuario.apto,
+      autor_nome: usuario.nome,
+    };
+    if (usandoSupabase) {
+      const [row] = await sb('avisos', { method: 'POST', body: JSON.stringify(novo) });
+      setAvisos(prev => [row, ...prev]);
+    } else {
+      setAvisos(prev => [{ ...novo, id: `local_${Date.now()}`, created_at: new Date().toISOString() }, ...prev]);
+    }
+    setNovoAviso({ titulo: '', conteudo: '', urgente: false });
+    setAbrirNovoAviso(false);
+  };
+
+  const excluirAviso = async (id) => {
+    if (!confirm('Excluir este aviso?')) return;
+    if (usandoSupabase) await sb(`avisos?id=eq.${id}`, { method: 'DELETE', prefer: '' });
+    setAvisos(prev => prev.filter(a => a.id !== id));
+  };
+
   // ---- FILTROS ----
   const sugestoesFiltradas = useMemo(() => {
     let f = sugestoes.filter(s => s.status !== 'arquivado' || filtroStatus === 'arquivado' || ehConselho);
@@ -1199,7 +1313,7 @@ export default function Condominio() {
 
   // ============ APP PRINCIPAL ============
   return (
-    <div style={{ minHeight: '100vh', background: COR.cinza100, fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>
+    <div style={{ minHeight: '100vh', minHeight: '-webkit-fill-available', background: COR.cinza100, fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif", overflowX: 'hidden' }}>
 
       {/* HEADER */}
       <header style={{ background: COR.azul, borderBottom: `3px solid ${COR.vinho}` }}>
@@ -1249,17 +1363,19 @@ export default function Condominio() {
           </div>
 
           {/* NAVEGAÇÃO PRINCIPAL POR ABAS */}
-          <div style={{ display: 'flex', gap: 2, marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 4 }}>
+          <div style={{ display: 'flex', gap: 2, marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 4, overflowX: 'auto' }}>
             {[
               { id: 'sugestoes', label: 'Sugestões', Icon: MessageCircle },
+              { id: 'avisos', label: 'Avisos', Icon: AlertCircle, badge: avisos.filter(a => a.urgente).length },
               { id: 'manutencoes', label: 'Manutenções', Icon: ClipboardList },
               { id: 'informacoes', label: 'Informações', Icon: BookOpen },
-            ].map(({ id, label, Icon }) => (
+            ].map(({ id, label, Icon, badge }) => (
               <button
                 key={id}
                 onClick={() => setAbaApp(id)}
                 style={{
-                  padding: '10px 20px',
+                  flexShrink: 0,
+                  padding: '10px 16px',
                   background: abaApp === id ? 'rgba(255,255,255,0.15)' : 'transparent',
                   color: abaApp === id ? '#fff' : 'rgba(255,255,255,0.5)',
                   border: 'none',
@@ -1272,9 +1388,13 @@ export default function Condominio() {
                   alignItems: 'center',
                   gap: 6,
                   transition: 'all 0.15s',
+                  position: 'relative',
                 }}
               >
                 <Icon size={15} /> {label}
+                {badge > 0 && (
+                  <span style={{ background: COR.vinho, color: '#fff', borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>{badge}</span>
+                )}
               </button>
             ))}
           </div>
@@ -1284,6 +1404,23 @@ export default function Condominio() {
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px' }}>
         {loading && (
           <div style={{ textAlign: 'center', padding: 60, color: COR.cinza400 }}>Carregando...</div>
+        )}
+
+        {!loading && abaApp === 'avisos' && (
+          <SecaoAvisos
+            avisos={avisos}
+            modoConselho={modoConselho}
+            usuario={usuario}
+            novoAviso={novoAviso}
+            setNovoAviso={setNovoAviso}
+            abrirNovoAviso={abrirNovoAviso}
+            setAbrirNovoAviso={setAbrirNovoAviso}
+            criarAviso={criarAviso}
+            excluirAviso={excluirAviso}
+            COR={COR}
+            input={input}
+            label={label}
+          />
         )}
 
         {!loading && abaApp === 'manutencoes' && (
@@ -1370,11 +1507,34 @@ export default function Condominio() {
                     <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COR.cinza400 }} />
                     <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar sugestão..." style={{ ...input, paddingLeft: 36 }} />
                   </div>
-                  <select value={ordenacao} onChange={e => setOrdenacao(e.target.value)} style={{ ...input, width: 'auto', cursor: 'pointer' }}>
-                    <option value="recentes">Mais recentes</option>
-                    <option value="votos">Mais participação</option>
-                    <option value="comentarios">Mais comentadas</option>
-                  </select>
+                  {/* Botões de ordenação destacados */}
+                  <div style={{ display: 'flex', background: COR.branco, border: `1.5px solid ${COR.cinza200}`, borderRadius: 8, overflow: 'hidden' }}>
+                    {[
+                      { val: 'recentes', label: 'Mais recentes' },
+                      { val: 'votos', label: 'Mais votadas' },
+                      { val: 'comentarios', label: 'Mais comentadas' },
+                    ].map(({ val, label: lbl }) => (
+                      <button
+                        key={val}
+                        onClick={() => setOrdenacao(val)}
+                        style={{
+                          padding: '8px 14px',
+                          background: ordenacao === val ? COR.azul : 'transparent',
+                          color: ordenacao === val ? '#fff' : COR.cinza400,
+                          border: 'none',
+                          borderRight: `1px solid ${COR.cinza200}`,
+                          fontSize: 12,
+                          fontWeight: ordenacao === val ? 700 : 400,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 8 }}>
